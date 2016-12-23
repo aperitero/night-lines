@@ -13,40 +13,6 @@
 window.onload = function() {
     var nightLines = new NightLines();
 }
-
-randomBetween = function (min, max)
-{
-    return min + Math.random() * (max - min);
-}
-
-randomIntBetween = function (min, max)
-{
-    return min + Math.round(Math.random() * (max - min));
-}
-
-randomAround = function(pivot, variation)
-{
-    variation = pivot * variation;
-    return randomBetween(pivot - variation, pivot + variation);
-}
-
-randomPointOnFrame = function(x, y, w, h)
-{
-    var point = new paper.Point();
-    // Source point on horizontal frame, top or bottom.
-    if (Math.random() > 0.5)
-    {
-        point.x = randomIntBetween(x, x + w);
-        point.y = Math.random() > 0.5 ? y : y + h;
-    }
-    // Source point on vertical frame, left or right; 
-    else
-    {
-        point.x = Math.random() > 0.5 ? x : x + w;
-        point.y = randomIntBetween(y, y + h);
-    }
-    return point;
-}
 </script>
 </head>
 <body>
