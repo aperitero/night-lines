@@ -11,7 +11,7 @@ var NightLines = paper.Base.extend({
     nodesBuilder: null,
     shapesFinder: null,
 
-    sceneWidth: 600,
+    sceneWidth: 800,
     sceneHeight: 600,
 
     frame: null,
@@ -49,9 +49,10 @@ var NightLines = paper.Base.extend({
         //this._testPath7();
         //this._testPath8();
         
+        this._generatePaths();
         this._run();
         
-        this._initMouseEvents();
+        //this._initMouseEvents();
 
         paper.view.draw();
     },
@@ -62,6 +63,63 @@ var NightLines = paper.Base.extend({
         paper.view.onMouseDown = function(event) {
             app.onMouseDown(event);
         }
+    },
+
+    _generatePaths: function()
+    {
+        var nMinSources = 5;
+        var nMaxSources = 8;
+
+        var nMinSegmentsPerSource = 5;
+        var nMaxSegmentsPerSource = 8;
+
+        var nSources = this.randomIntBetween(nMinSources, nMaxSources);
+        //console.log("nSources: " + nSources);
+
+        var sourceCounter = nSources;
+        while (--sourceCounter >= 0)
+        {
+            var point = this.randomPointOnFrame(0, 0, this.sceneWidth, this.sceneHeight);
+
+		    var path = new paper.Path();
+		    path.strokeColor = 'black';
+            path.moveTo(point);
+
+            var nSegments = this.randomIntBetween(nMinSegmentsPerSource, nMaxSegmentsPerSource);
+            
+            var segmentCounter = nSegments;
+            while (--segmentCounter >= 1)
+            {
+                point.x = this.randomIntBetween(this.frameMargin * 2, this.sceneWidth - this.frameMargin * 2);
+                point.y = this.randomIntBetween(this.frameMargin * 2, this.sceneHeight - this.frameMargin * 2);
+                path.lineTo(point);
+            }
+            path.lineTo(this.randomPointOnFrame(0, 0, this.sceneWidth, this.sceneHeight));
+            this.paths.push(path);
+        }
+    },
+
+    randomIntBetween: function (min, max)
+    {
+        return min + Math.round(Math.random() * (max - min));
+    },
+
+    randomPointOnFrame: function(x, y, w, h)
+    {
+        var point = new paper.Point();
+        // Source point on horizontal frame, top or bottom.
+        if (Math.random() > 0.5)
+        {
+            point.x = this.randomIntBetween(x, x + w);
+            point.y = Math.random() > 0.5 ? y : y + h;
+        }
+        // Source point on vertical frame, left or right; 
+        else
+        {
+            point.x = Math.random() > 0.5 ? x : x + w;
+            point.y = this.randomIntBetween(y, y + h);
+        }
+        return point;
     },
     
     _testPath1: function()
