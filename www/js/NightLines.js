@@ -263,8 +263,8 @@ var NightLines = paper.Base.extend({
         //console.log(this);
         var links = this.nodesBuilder.buildNodes(this.paths)
         var shapes = this.shapesFinder.findShapes(links);
-        //this._drawLinks(links);
         this._drawShapes(shapes);
+        //this._drawLinksLabels(links);
     },
 
 
@@ -279,7 +279,7 @@ var NightLines = paper.Base.extend({
         this.paths.push(this.frame);
     },
 
-    _drawLinks: function(links)
+    _drawLinksLabels: function(links)
     {
         if (this.textsLayer == null)
         {
@@ -313,7 +313,8 @@ var NightLines = paper.Base.extend({
     {
         if (this.shapesLayer == null)
         {
-            this.shapesLayer = new paper.Layer(); 
+            this.shapesLayer = new paper.Layer();
+            this.shapesLayer.sendToBack(); 
         }
         else
         {
@@ -326,7 +327,7 @@ var NightLines = paper.Base.extend({
         {
             var nodes = shapes[i];
             var path = new paper.Path();
-            path.fillColor = new paper.Color(i % 5 * 0.2, (i) % 3 * 0.3, (i + 3) % 5 * 0.2, 0.5);
+            path.fillColor = new paper.Color(i % 5 * 0.2, (i) % 3 * 0.3, (i + 3) % 5 * 0.2, 1);
             path.closed = true;
             var j = nodes.length;
             while(--j >= 0)
