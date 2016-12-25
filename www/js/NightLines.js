@@ -48,6 +48,7 @@ var NightLines = paper.Base.extend({
         //this._testPath6();
         //this._testPath7();
         //this._testPath8();
+        //this._testPath9();
         
         this._generatePaths();
         this._run();
@@ -255,6 +256,27 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(300, 300));
         path.add(new paper.Point(240, 300));
         path.closed = true;
+        this.paths.push(path);
+    },
+
+    _testPath9: function()
+    {
+        var path = new paper.Path();
+        path.strokeColor = 'black';
+        path.add(new paper.Point(100, 100));
+        path.add(new paper.Point(200, 100));
+        path.add(new paper.Point(200, 200));
+        path.add(new paper.Point(100, 200));
+        path.closed = true;
+        this.paths.push(path);
+        
+        var path = new paper.Path();
+        path.strokeColor = 'black';
+        path.add(new paper.Point(130, 100));
+        path.add(new paper.Point(130, 170));
+        path.add(new paper.Point(170, 170));
+        path.add(new paper.Point(170, 100));
+        path.closed = false;
         this.paths.push(path);
     },
 

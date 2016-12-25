@@ -139,21 +139,23 @@ var NodesBuilder = paper.Base.extend({
 
         //console.log("_insertNodeOnCurve: node: " + node.index + ", node1: " + (node1 ? node1.index : -1) + ", node2: " + (node2 ? node2.index : -1));
 
+        var link, forks;
         if (node1 && node2)
         {
-            this._removeLinkBetweenNodes(node1, node2);
+            link = this._removeLinkBetweenNodes(node1, node2);
+            forks = link ? (link.forks ? link.forks.slice() : null) : null;
         }
         if (node1)
         {
-            this._addLinkBetweenNodes(node1, node);
+            this._addLinkBetweenNodes(node1, node, forks);
         }
         if (node2)
         {
-            this._addLinkBetweenNodes(node, node2);
+            this._addLinkBetweenNodes(node, node2, forks);
         }
     },
 
-    _addLinkBetweenNodes: function(node1, node2)
+    _addLinkBetweenNodes: function(node1, node2, linkForks)
     {
         var node1Link = this._addLinkToNode(node1, node2);
         if (node1Link != null)
@@ -165,7 +167,8 @@ var NodesBuilder = paper.Base.extend({
                 var link = {
                     node1: node1,
                     node2: node2,
-                    index: this.links.length
+                    index: this.links.length,
+                    forks: linkForks ? linkForks.slice() : null,
                 };
                 this.links.push(link);
                 node1Link.link = link;
@@ -215,6 +218,7 @@ var NodesBuilder = paper.Base.extend({
         {
             this.links[link.index] = null;
         }
+        return link;
     },
 
     _removeLinkFromNode: function(node1, node2)
@@ -354,6 +358,13 @@ var NodesBuilder = paper.Base.extend({
         nodeForCurve = this._initNodeForCurve(pathIndex, 0, 0, true, curves[0].point1);
         firstNode = previousNode = this.nodes[nodeForCurve.nodeIndex];
 
+        var linkForks;
+        if (pathIndex == 0)
+        {
+            linkForks = new Array();
+            linkForks[path.clockwise ? 1 : 0] = {};
+        }
+
         for (var i = 0; i < l; i++)
         {
             curve = curves[i];
@@ -372,7 +383,7 @@ var NodesBuilder = paper.Base.extend({
                 nodeForCurve = this._initNodeForCurve(pathIndex, i, 1, true, curve.point2);
             }
             node = this.nodes[nodeForCurve.nodeIndex];
-            this._addLinkBetweenNodes(previousNode, node);
+            this._addLinkBetweenNodes(previousNode, node, linkForks);
             previousNode = node;
         }
     },
