@@ -145,7 +145,7 @@ var NodesBuilder = paper.Base.extend({
         }
         if (node1)
         {
-            this._addLinkBetweenNodes(node, node1);
+            this._addLinkBetweenNodes(node1, node);
         }
         if (node2)
         {
@@ -364,14 +364,15 @@ var NodesBuilder = paper.Base.extend({
                 nodeForCurve = this._initIntersection(pathIndex, i    , 1,
                                                       pathIndex, (i < l - 1 ? i + 1 : 0), 0,
                                                       curve.point2)[0];
-                node = this.nodes[nodeForCurve.nodeIndex];
             }
             else
             {
+                // For the last point on the path, if it is not closed (otherwise we use the
+                // first node, corresponding to the first point of the path - see above).
                 nodeForCurve = this._initNodeForCurve(pathIndex, i, 1, true, curve.point2);
-                node = this.nodes[nodeForCurve.nodeIndex];
             }
-            this._addLinkBetweenNodes(node, previousNode);
+            node = this.nodes[nodeForCurve.nodeIndex];
+            this._addLinkBetweenNodes(previousNode, node);
             previousNode = node;
         }
     },
