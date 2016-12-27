@@ -43,12 +43,17 @@ var ShapesFinder = paper.Base.extend({
         {
             forks = new Array();
         }
+
         var fork = {
             maxNode: null,
             maxNodeFrom: null,
             maxNodeTo: null,
             firstNodeIndex: nodes.length,
             dead: false,
+            adjacentShape: null,
+            shape: null,
+            side: side,
+            firstLink: link,
         };
         forks.push(fork);
 
@@ -144,7 +149,14 @@ var ShapesFinder = paper.Base.extend({
         var j = forks.length;
         var fork;
         var maxNode, maxNodeFrom, maxNodeTo;
+        var adjacentShapes = new Array();
+        var shape = {
+            adjacentShapes: null,
+            nodes: null,
+            outside: true,
+        };
 
+        var oppositeFork;
         // First get the max node of all forks that are part of the loop.
         while(--j >= forkIndex)
         {
@@ -154,6 +166,24 @@ var ShapesFinder = paper.Base.extend({
                 maxNode = fork.maxNode;
                 maxNodeFrom = fork.maxNodeFrom;
                 maxNodeTo = fork.maxNodeTo;
+            }
+
+            fork.shape = shape;
+
+            oppositeShape = ((fork.firstLink.forks[this._SIDE_RIGHT] == fork ?
+                              fork.firstLink.forks[this._SIDE_LEFT]
+                            : fork.firstLink.forks[this._SIDE_RIGHT])
+                            || {shape:null}).shape;
+            if (oppositeShape && oppositeShape.adjacentShapes)
+            {
+                if (oppositeShape && -1 == adjacentShapes.indexOf(oppositeShape))
+                {
+                    adjacentShapes.push(oppositeShape);
+                }
+                if (-1 == oppositeShape.adjacentShapes.indexOf(shape))
+                {
+                    oppositeShape.adjacentShapes.push(shape);
+                }
             }
         }
 
@@ -168,8 +198,12 @@ var ShapesFinder = paper.Base.extend({
         // We can close the shape if we discovered it on the inside.
         if (side == shapeSide)
         {
+            shape.outside = false;
+            shape.nodes = nodes;
+            shape.adjacentShapes = adjacentShapes;
+
             //console.log("Shape!!!" + nodes.map(function(_node) { return _node.index; } ));
-            this.shapes.push(nodes);
+            this.shapes.push(shape);
         }
     },
 
