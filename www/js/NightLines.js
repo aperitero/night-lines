@@ -50,12 +50,8 @@ var NightLines = paper.Base.extend({
         //this._testPath8();
         //this._testPath9();
         
-        this._generatePaths();
+        this._initMouseEvents();
         this._run();
-        
-        //this._initMouseEvents();
-
-        paper.view.draw();
     },
 
     _initMouseEvents: function()
@@ -68,6 +64,9 @@ var NightLines = paper.Base.extend({
 
     _generatePaths: function()
     {
+        // Remove all paths except the frame.
+        this.paths.splice(1);
+
         var nMinSources = 5;
         var nMaxSources = 8;
 
@@ -84,6 +83,7 @@ var NightLines = paper.Base.extend({
 
 		    var path = new paper.Path();
 		    path.strokeColor = 'black';
+            path.visible = false;
             path.moveTo(point);
 
             var nSegments = this.randomIntBetween(nMinSegmentsPerSource, nMaxSegmentsPerSource);
@@ -282,11 +282,21 @@ var NightLines = paper.Base.extend({
 
     _run: function()
     {
+        var d1 = Date.now();
+        this._generatePaths();
+        this._findAndDrawShapes();
+        var d2 = Date.now();
+        console.log("Time taken: " + (d2 - d1) + "ms");
+    },
+
+    _findAndDrawShapes: function()
+    {
         //console.log(this);
         var links = this.nodesBuilder.buildNodes(this.paths)
         var shapes = this.shapesFinder.findShapes(links);
         this._drawShapes(shapes);
         //this._drawLinksLabels(links);
+        console.log("Number of shapes: " + shapes.length);
     },
 
 
@@ -297,7 +307,6 @@ var NightLines = paper.Base.extend({
             this.frameBR = new paper.Point(this.sceneWidth - this.frameMargin,
                                            this.sceneHeight - this.frameMargin)
         );
-        this.frame.strokeColor = 'black';
         this.paths.push(this.frame);
     },
 
@@ -349,22 +358,79 @@ var NightLines = paper.Base.extend({
         {
             var nodes = shapes[i];
             var path = new paper.Path();
-            path.fillColor = new paper.Color(i % 5 * 0.2, (i) % 3 * 0.3, (i + 3) % 5 * 0.2, 1);
+            //path.fillColor = new paper.Color(i % 5 * 0.2, (i) % 3 * 0.3, (i + 3) % 5 * 0.2, 1);
             path.closed = true;
             var j = nodes.length;
             while(--j >= 0)
             {
                 path.add(nodes[j].point);
             }
+
+            var circles = this._generateCirclesForShape(path);
+            if (typeof(circles) == "string")
+            {
+                path.fillColor = circles;
+            }
+            else
+            {
+                var group = new paper.Group(path, circles);
+                group.clipped = true;
+            }
         }
     },
 
+    _generateCirclesForShape: function(path)
+    {
+        var bounds = path.bounds;
+        var radius;
+
+        var center = bounds.center.add(
+             bounds.topLeft.subtract(bounds.center)
+            .rotate(Math.random() * 360)
+            .multiply(1 + Math.random() * 0.25)
+        );
+
+        var radius = 0;
+        var pos = [bounds.topLeft, bounds.topRight, bounds.bottomLeft, bounds.bottomRight];
+        for (var i in pos)
+        {
+            radius = Math.max(radius, center.getDistance(pos[i]));
+        }
+
+        // bigger areas are darker (get bigger black strips and smaller
+        // white strips).
+        var darknessFactor = Math.min((bounds.width + bounds.height) / 500, 1);
+        var blackStripsWidth = (5 + Math.random() * 25 * darknessFactor);
+        var whiteStripsWidth = (1 + Math.random() * 10 * (1 - darknessFactor));
+
+        var circles = new paper.Group(); 
+
+        var color1 = "black"; //new paper.Color(Math.random(), Math.random(), Math.random());
+        var color2 = "white"; //new paper.Color(Math.random(), Math.random(), Math.random());
+
+        var i = 0;
+        var j = 0;
+        var stripWidth;
+        do {
+            i += (stripWidth = (++j % 2 ? blackStripsWidth : whiteStripsWidth));
+            new paper.Path.Circle({
+                center: center,
+                radius: i,
+                fillColor: j % 2 ? color1 : color2,
+                parent: circles,
+            }).sendToBack();
+        } while (i < radius);
+
+        return circles;
+    },
+
+
     onMouseDown: function(event)
     {
-        var mousePoint = event.point.clone();
+        /*var mousePoint = event.point.clone();
         this.constrainMousePoint(mousePoint);
         this.path.add(mousePoint);
-        paper.view.draw();
+        paper.view.draw();*/
 
         this._run();
     },
