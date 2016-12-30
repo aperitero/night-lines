@@ -434,8 +434,8 @@ var NightLines = paper.Base.extend({
     _getCirclesConf: function()
     {
         return {
-            darkColor: '#000000',
-            liteColor: '#FFFFFF',
+            darkColor:  '#000000',
+            lightColor: '#FFFFFF',
             sizeFactor: 1,
             maxSizeForLite: 200,
             minSizeForDark: 500,
@@ -450,7 +450,7 @@ var NightLines = paper.Base.extend({
         var color = null;
         if (size < conf.maxSizeForLite && shape.nodes.length < 4)
         {
-            color = conf.liteColor;
+            color = conf.lightColor;
         }
         else if (size > conf.minSizeForDark)
         {
@@ -519,7 +519,7 @@ var NightLines = paper.Base.extend({
         // white strips).
         var darknessFactor = Math.min(size / conf.minSizeForDark, 1);
         var darkStripsWidth = (5 + Math.random() * 25 * darknessFactor) * conf.sizeFactor;
-        var liteStripsWidth = (1 + Math.random() * 10 * (1 - darknessFactor * 0.75)) * conf.sizeFactor;
+        var lightStripsWidth = (1 + Math.random() * 10 * (1 - darknessFactor * 0.75)) * conf.sizeFactor;
 
         var circles = new paper.Group(); 
 
@@ -527,11 +527,11 @@ var NightLines = paper.Base.extend({
         var j = 0;
         var stripWidth;
         do {
-            i += (stripWidth = (++j % 2 ? darkStripsWidth : liteStripsWidth));
+            i += (stripWidth = (++j % 2 ? darkStripsWidth : lightStripsWidth));
             new paper.Path.Circle({
                 center: center,
                 radius: i,
-                fillColor: j % 2 ? conf.darkColor : conf.liteColor,
+                fillColor: j % 2 ? conf.darkColor : conf.lightColor,
                 parent: circles,
             }).sendToBack();
         } while (i < radius);
@@ -556,7 +556,7 @@ var NightLines = paper.Base.extend({
                 {
                     for (var j = 0; j < shapesB.length; j++)
                     {
-                        if ((shapeB = shapesB[j]) != shapeA && shapeB.color == conf.liteColor)
+                        if ((shapeB = shapesB[j]) != shapeA && shapeB.color == conf.lightColor)
                         {
                             return shapeB.nodes[Math.floor(Math.random() * shapeB.nodes.length)].point;
                         }
@@ -575,7 +575,7 @@ var NightLines = paper.Base.extend({
             var adjacentShapeNodes;
             for (var i = 0; i < adjacentShapes.length; i++)
             {
-                if ((adjacentShape = adjacentShapes[i]).color == conf.liteColor)
+                if ((adjacentShape = adjacentShapes[i]).color == conf.lightColor)
                 {
                     adjacentShapeNodes = adjacentShape.nodes;
                     for (var j = 0; j < adjacentShapeNodes.length; j++)
