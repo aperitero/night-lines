@@ -2,7 +2,6 @@ var NightLines = paper.Base.extend({
     _class: "NighLines",
 
     path: null,
-    paths: null,
     canvas: null,
     
     shapesLayer: null,
@@ -25,8 +24,6 @@ var NightLines = paper.Base.extend({
         this.nodesBuilder = new NodesBuilder();
         this.shapesFinder = new ShapesFinder();
 
-        this.paths = [];
-
         this.canvas = document.getElementById("myCanvas");
         this.canvas.width = this.sceneWidth;
         this.canvas.height = this.sceneHeight;
@@ -34,11 +31,6 @@ var NightLines = paper.Base.extend({
         paper.setup("myCanvas");
 
         this._initFrame();
-        
-        this.path = new paper.Path();
-        this.path.strokeColor = 'black';
-        
-        this.paths.push(this.path);
         
         //this._testPath1();
         //this._testPath2();
@@ -62,10 +54,23 @@ var NightLines = paper.Base.extend({
         }
     },
 
+    _initPathsLayer: function()
+    {
+        if (this.pathsLayer == null)
+        {
+            this.pathsLayer = new paper.Layer(); 
+            //this.pathsLayer.visible = false;
+        }
+        else
+        {
+            this.pathsLayer.removeChildren(1);
+        }
+        this.pathsLayer.activate();
+    },
+
     _generatePaths: function()
     {
-        // Remove all paths except the frame.
-        this.paths.splice(1);
+        this._initPathsLayer();
 
         var nMinSources = 5;
         var nMaxSources = 8;
@@ -79,25 +84,20 @@ var NightLines = paper.Base.extend({
         var sourceCounter = nSources;
         while (--sourceCounter >= 0)
         {
-            var point = this.randomPointOnFrame(0, 0, this.sceneWidth, this.sceneHeight);
-
 		    var path = new paper.Path();
-		    path.strokeColor = 'black';
-            path.visible = false;
-            path.moveTo(point);
+            //path.strokeColor = "red";
+            path.moveTo(this.randomPointOnFrame(0, 0, this.sceneWidth, this.sceneHeight));
 
-            var nSegments = this.randomIntBetween(nMinSegmentsPerSource, nMaxSegmentsPerSource);
-            
-            var segmentCounter = nSegments;
+            var segmentCounter = this.randomIntBetween(nMinSegmentsPerSource, nMaxSegmentsPerSource);
             while (--segmentCounter >= 1)
             {
-                point.x = this.randomIntBetween(this.frameMargin * 2, this.sceneWidth - this.frameMargin * 2);
-                point.y = this.randomIntBetween(this.frameMargin * 2, this.sceneHeight - this.frameMargin * 2);
-                path.lineTo(point);
+                path.lineTo(this.randomIntBetween(this.frameMargin * 2, this.sceneWidth - this.frameMargin * 2),
+                            this.randomIntBetween(this.frameMargin * 2, this.sceneHeight - this.frameMargin * 2));
             }
             path.lineTo(this.randomPointOnFrame(0, 0, this.sceneWidth, this.sceneHeight));
-            this.paths.push(path);
         }
+
+        //console.log(paper.project.activeLayer.exportJSON({asString: true}));
     },
 
     randomIntBetween: function (min, max)
@@ -136,7 +136,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(240, 240));
         path.add(new paper.Point(100, 240));
         path.closed = true;
-        this.paths.push(path);
     },
 
     _testPath2: function()
@@ -149,7 +148,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(100, 200));
         path.closed = true;
         path.translate(new paper.Point(20, 120));
-        this.paths.push(path);
     },
 
     _testPath3: function()
@@ -166,7 +164,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(200, 60));
         path.translate(new paper.Point(0, 150));
         path.closed = true;
-        this.paths.push(path);
     },
 
     _testPath4: function()
@@ -179,7 +176,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(100, 200));
         path.closed = true;
         path.translate(new paper.Point(200, 0));
-        this.paths.push(path);
     },
 
     _testPath5: function()
@@ -192,7 +188,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(100, 200));
         path.closed = true;
         path.translate(new paper.Point(250, 50));
-        this.paths.push(path);
     },
 
     _testPath6: function()
@@ -207,7 +202,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(100, 200));
         path.closed = true;
         path.translate(new paper.Point(250, 250));
-        this.paths.push(path);
     },
 
     _testPath7: function()
@@ -219,7 +213,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(200, 200));
         path.add(new paper.Point(100, 200));
         path.closed = true;
-        this.paths.push(path);
         
         path = new paper.Path();
         path.strokeColor = 'black';
@@ -227,7 +220,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(130, 130));
         path.add(new paper.Point(160, 140));
         path.closed = false;
-        this.paths.push(path);
     },
 
     _testPath8: function()
@@ -238,7 +230,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(220, 230));
         path.add(new paper.Point(240, 240));
         path.closed = false;
-        this.paths.push(path);
         
         var path = new paper.Path();
         path.strokeColor = 'black';
@@ -247,7 +238,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(200, 200));
         path.add(new paper.Point(100, 200));
         path.closed = true;
-        this.paths.push(path);
         
         var path = new paper.Path();
         path.strokeColor = 'black';
@@ -256,7 +246,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(300, 300));
         path.add(new paper.Point(240, 300));
         path.closed = true;
-        this.paths.push(path);
     },
 
     _testPath9: function()
@@ -268,7 +257,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(200, 200));
         path.add(new paper.Point(100, 200));
         path.closed = true;
-        this.paths.push(path);
         
         var path = new paper.Path();
         path.strokeColor = 'black';
@@ -277,7 +265,6 @@ var NightLines = paper.Base.extend({
         path.add(new paper.Point(170, 170));
         path.add(new paper.Point(170, 100));
         path.closed = false;
-        this.paths.push(path);
     },
 
     _run: function()
@@ -292,7 +279,7 @@ var NightLines = paper.Base.extend({
     _findAndDrawShapes: function()
     {
         //console.log(this);
-        var links = this.nodesBuilder.buildNodes(this.paths)
+        var links = this.nodesBuilder.buildNodes(this.pathsLayer.children)
         var shapes = this.shapesFinder.findShapes(links);
         this._drawShapes(shapes);
         //this._drawLinksLabels(links);
@@ -302,12 +289,13 @@ var NightLines = paper.Base.extend({
 
     _initFrame: function()
     {
+        this._initPathsLayer();
         this.frame = new paper.Path.Rectangle(
             this.frameTL = new paper.Point(this.frameMargin, this.frameMargin),
             this.frameBR = new paper.Point(this.sceneWidth - this.frameMargin,
                                            this.sceneHeight - this.frameMargin)
         );
-        this.paths.push(this.frame);
+        //this.frame.strokeColor = "red";
     },
 
     _drawLinksLabels: function(links)
