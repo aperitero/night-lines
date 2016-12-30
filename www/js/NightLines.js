@@ -341,28 +341,64 @@ var NightLines = paper.Base.extend({
         }
         this.shapesLayer.activate();
 
+        //var conf = this._confShapeColored();
+        var conf = this._confShapeCircles()
+
         var i = shapes.length;
         var shape;
         while(--i >= 0)
         {
-            shape = shapes[i];
-            var nodes = shape.nodes;
-            var path = new paper.Path();
-
-            path.closed = true;
-            var j = nodes.length;
-            while(--j >= 0)
+            if (this._drawShapeFirstPass(shapes[i], conf))
             {
-                path.add(nodes[j].point);
+                shapes.splice(i, 1);
             }
-
-            this._fillShapeCircles(shape, path);
+        }
+        i = shapes.length;
+        while (--i >= 0)
+        {
+            this._drawShapeSecondPass(shapes[i], conf);
         }
     },
 
-    _fillShapeColored: function(shape, path)
+    _drawShape: function(shape)
     {
-        var colors = this._getShapeColors();
+        var nodes = shape.nodes;
+        var path = new paper.Path();
+
+        path.closed = true;
+        var j = nodes.length;
+        while(--j >= 0)
+        {
+            path.add(nodes[j].point);
+        }
+        return path;
+    },
+
+    _drawShapeFirstPass: function(shape, conf) { return true; },
+    _drawShapeSecondPass: function(shape, conf) {},
+
+    _confShapeColored: function()
+    {
+        this._drawShapeFirstPass = this._drawShapeColored;
+        return {
+            colors: this._getShapeColors(),
+        };
+    },
+
+    _getShapeColors: function()
+    {
+        var colors = new Array();
+        for (var j = 0; j < 5; j++)
+        {
+            colors[j] = new paper.Color(j % 5 / 7, (j + 1) % 5 / 6, (j + 3) % 5 / 9);
+        }
+        return colors;
+    },
+
+    _drawShapeColored: function(shape, conf)
+    {
+        var path = this._drawShape(shape);
+        var colors = conf.colors;
         if (shape.adjacentShapes && shape.adjacentShapes.length)
         {
             colorsLoop: for (var j = 0; j < colors.length; j++)
@@ -375,51 +411,50 @@ var NightLines = paper.Base.extend({
                     }
                 }
                 shape.color = colors[j];
-            } 
+            }
         }
         if (!shape.color)
         {
             shape.color = colors[Math.floor(Math.random() * colors.length)];
         }
         path.fillColor = shape.color;
+
+        // We don't want a second pass.
+        return true;
     },
 
-    _getShapeColors: function()
+
+    _confShapeCircles: function()
     {
-        if (!this._shapeColors)
-        {
-            this._shapeColors = new Array();
-            for (var j = 0; j < 5; j++)
-            {
-                this._shapeColors[j] = new paper.Color(j % 5 / 5, (j + 1) % 5 / 5, (j + 3) % 5 / 5);
-            }
-        }
-        return this._shapeColors;
+        this._drawShapeFirstPass  = this._drawShapeCirclesFirstPass;
+        this._drawShapeSecondPass = this._drawShapeCirclesSecondPass;
+        return this._getCirclesConf();
     },
 
-    _fillShapeCircles: function(shape, path)
+    _getCirclesConf: function()
     {
-        var darkColor = '#440618';
-        var liteColor = '#11968d';
+        return {
+            darkColor: '#000000',
+            liteColor: '#FFFFFF',
+            sizeFactor: 1,
+            maxSizeForLite: 200,
+            minSizeForDark: 500,
+        };
+    },
 
-        var bounds = path.bounds;
-        var radius;
+    _drawShapeCirclesFirstPass: function(shape, conf)
+    {
+        var path = this._drawShape(shape);
+        var size = this._getPathSizeForCircles(path, conf);
 
-        var size = bounds.width + bounds.height;
-
-        var sizeFactor = 1;
-
-        var maxSize = 500 * sizeFactor;
-        var minSize = 80 * sizeFactor;
-        
         var color = null;
-        if (size < minSize && shape.nodes.length == 3)
+        if (size < conf.maxSizeForLite && shape.nodes.length < 4)
         {
-            color = liteColor;
+            color = conf.liteColor;
         }
-        else if (size > maxSize)
+        else if (size > conf.minSizeForDark)
         {
-            color = darkColor;
+            color = conf.darkColor;
         }
 
         if (color && shape.adjacentShapes && shape.adjacentShapes.length)
@@ -438,51 +473,124 @@ var NightLines = paper.Base.extend({
         if (color)
         {
             path.fillColor = color;
+
+            // We don't want a second pass for this shape (plain color).
+            return true;
         }
         else
         {
+            shape.path = path;
 
-            var center = bounds.center.add(
+            // We want a second pass for this shape (stripes).
+            return false;
+        }
+    },
+    
+    _drawShapeCirclesSecondPass: function(shape, conf)
+    {
+        var path = shape.path;
+        // shape.path should always have been defined from first pass.
+        if (!path)
+        {
+            return;
+        }
+
+        var bounds = path.bounds;
+        var size = this._getPathSizeForCircles(path, conf);
+
+        var center = this._getCenterForCircles(shape, conf);
+        if (!center)
+        {
+            center = bounds.center.add(
                  bounds.topLeft.subtract(bounds.center)
                 .rotate(Math.random() * 360)
                 .multiply(1 + Math.random() * 0.25)
             );
+        }
 
-            var radius = 0;
-            var pos = [bounds.topLeft, bounds.topRight, bounds.bottomLeft, bounds.bottomRight];
-            for (var i in pos)
+        var radius = 0;
+        var pos = [bounds.topLeft, bounds.topRight, bounds.bottomLeft, bounds.bottomRight];
+        for (var i in pos)
+        {
+            radius = Math.max(radius, center.getDistance(pos[i]));
+        }
+
+        // bigger areas are darker (get bigger black strips and smaller
+        // white strips).
+        var darknessFactor = Math.min(size / conf.minSizeForDark, 1);
+        var darkStripsWidth = (5 + Math.random() * 25 * darknessFactor) * conf.sizeFactor;
+        var liteStripsWidth = (1 + Math.random() * 10 * (1 - darknessFactor * 0.75)) * conf.sizeFactor;
+
+        var circles = new paper.Group(); 
+
+        var i = 0;
+        var j = 0;
+        var stripWidth;
+        do {
+            i += (stripWidth = (++j % 2 ? darkStripsWidth : liteStripsWidth));
+            new paper.Path.Circle({
+                center: center,
+                radius: i,
+                fillColor: j % 2 ? conf.darkColor : conf.liteColor,
+                parent: circles,
+            }).sendToBack();
+        } while (i < radius);
+
+        (new paper.Group(path, circles)).clipped = true;
+    },
+
+    _getPathSizeForCircles: function(path, conf)
+    {
+        var bounds = path.bounds;
+        return (bounds.width + bounds.height) / conf.sizeFactor;
+    },
+
+    _getCenterForCircles_bk: function(shape, conf)
+    {
+        var shapesA, shapeA, shapesB, shapeB;
+        if ((shapesA = shape.adjacentShapes) && shapesA.length)
+        {
+            for (var i = 0; i < shapesA.length; i++)
             {
-                radius = Math.max(radius, center.getDistance(pos[i]));
+                if ((shapesB = (shapeA = shapesA[i]).adjacentShapes).length > 1)
+                {
+                    for (var j = 0; j < shapesB.length; j++)
+                    {
+                        if ((shapeB = shapesB[j]) != shapeA && shapeB.color == conf.liteColor)
+                        {
+                            return shapeB.nodes[Math.floor(Math.random() * shapeB.nodes.length)].point;
+                        }
+                    }
+                }
             }
-
-            // bigger areas are darker (get bigger black strips and smaller
-            // white strips).
-            var darknessFactor = Math.min(size / maxSize, 1);
-            var blackStripsWidth = (5 + Math.random() * 25 * darknessFactor) * sizeFactor;
-            var whiteStripsWidth = (1 + Math.random() * 10 * (1 - darknessFactor)) * sizeFactor;
-
-            var circles = new paper.Group(); 
-
-            var color1 = darkColor; //new paper.Color(Math.random(), Math.random(), Math.random());
-            var color2 = liteColor; //new paper.Color(Math.random(), Math.random(), Math.random());
-
-            var i = 0;
-            var j = 0;
-            var stripWidth;
-            do {
-                i += (stripWidth = (++j % 2 ? blackStripsWidth : whiteStripsWidth));
-                new paper.Path.Circle({
-                    center: center,
-                    radius: i,
-                    fillColor: j % 2 ? color1 : color2,
-                    parent: circles,
-                }).sendToBack();
-            } while (i < radius);
-
-            (new paper.Group(path, circles)).clipped = true;
         }
     },
 
+    _getCenterForCircles: function(shape, conf)
+    {
+        var adjacentShapes, adjacentShape, center;
+        if ((adjacentShapes = shape.adjacentShapes) && adjacentShapes.length)
+        {
+            var nodes = shape.nodes;
+            var adjacentShapeNodes;
+            for (var i = 0; i < adjacentShapes.length; i++)
+            {
+                if ((adjacentShape = adjacentShapes[i]).color == conf.liteColor)
+                {
+                    adjacentShapeNodes = adjacentShape.nodes;
+                    for (var j = 0; j < adjacentShapeNodes.length; j++)
+                    {
+                        if (-1 == nodes.indexOf(adjacentShapeNodes[j]))
+                        {
+                            center = adjacentShapeNodes[j].point;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return center;
+    },
 
     onMouseDown: function(event)
     {
